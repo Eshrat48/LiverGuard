@@ -1,0 +1,26 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Manrope', sans-serif;
+  color: #0f2b4a;
+  background:
+    radial-gradient(1200px 500px at 18% -20%, #edf6ff 0%, transparent 70%),
+    radial-gradient(900px 450px at 100% 0%, #dfefff 0%, transparent 60%),
+    #d7deea;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.page-title {
+  font-family: 'Outfit', sans-serif;
+}
