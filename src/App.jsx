@@ -4,7 +4,6 @@ import HomePage from './pages/HomePage'
 import PredictionInputPage from './pages/PredictionInputPage'
 import PredictionResultPage from './pages/PredictionResultPage'
 import AboutPage from './pages/AboutPage'
-import UnderstandingPage from './pages/UnderstandingPage'
 import PerformancePage from './pages/PerformancePage'
 import TeamPage from './pages/TeamPage'
 
@@ -18,7 +17,7 @@ export default function App() {
         <Route path="/input" element={<PredictionInputPage />} />
         <Route path="/result" element={<PredictionResultPage />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/understanding" element={<UnderstandingPage />} />
+        <Route path="/understanding" element={<Navigate to="/about" replace />} />
         <Route path="/performance" element={<PerformancePage />} />
         <Route path="/team" element={<TeamPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

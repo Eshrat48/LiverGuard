@@ -3,6 +3,7 @@ import cors from "cors"
 import mysql from "mysql2"
 
 const app = express()
+const MODEL_API_URL = process.env.MODEL_API_URL || "http://127.0.0.1:5001/predict"
 
 app.use(cors())
 app.use(express.json())
@@ -47,13 +48,57 @@ app.post("/saveFeatures", (req, res) => {
     Number(data.triglycerides) || 0,
     Number(data.cholesterol) || 0,
     Number(data.diabetes_status) || 0
-  ], (err, result) => {
+  ], async (err, result) => {
     if (err) {
       console.log("SQL ERROR:", err)
       res.json({ success: false })
     } else {
       console.log("INSERT SUCCESS")
-      res.json({ success: true })
+
+      let prediction = null
+
+      const modelPayload = {
+        Age: Number(data.age) || 0,
+        Height: (Number(data.feet) || 0) * 12 + (Number(data.inches) || 0),
+        Weight: Number(data.weight) || 0,
+        BMI: Number(data.bmi) || 0,
+        FBS: Number(data.fbs) || 0,
+        ALT: Number(data.alt) || 0,
+        AST: Number(data.ast) || 0,
+        LDL: Number(data.ldl) || 0,
+        HDL: Number(data.hdl) || 0,
+        Triglycerides: Number(data.triglycerides) || 0,
+        Cholesterol: Number(data.cholesterol) || 0,
+        Diabetes: Number(data.diabetes_status) || 0
+      }
+
+      try {
+        const modelRes = await fetch(MODEL_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(modelPayload)
+        })
+
+        if (modelRes.ok) {
+          const modelData = await modelRes.json()
+          if (!modelData.error) {
+            prediction = modelData
+          } else {
+            console.log("MODEL API ERROR:", modelData.error)
+          }
+        } else {
+          console.log("MODEL API HTTP ERROR:", modelRes.status)
+        }
+      } catch (modelErr) {
+        console.log("MODEL API CONNECTION ERROR:", modelErr.message)
+      }
+
+      res.json({
+        success: true,
+        prediction
+      })
     }
   })
 })

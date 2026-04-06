@@ -1,0 +1,26 @@
+{
+  "metrics": {
+    "accuracy": null,
+    "precision": null,
+    "recall": null,
+    "f1Score": null
+  },
+  "confusionMatrix": {
+    "tp": null,
+    "fp": null,
+    "fn": null,
+    "tn": null
+  },
+  "modelInfo": {
+    "modelVersion": "v1.0.0",
+    "lastTrained": "YYYY-MM-DD",
+    "dataset": "NAFLD validation set",
+    "baseModels": [
+      "Logistic Regression",
+      "Random Forest",
+      "XGBoost"
+    ],
+    "metaModel": "Logistic Regression (Stacking)"
+  },
+  "message": "Populate this file with real evaluation outputs from your training pipeline."
+}

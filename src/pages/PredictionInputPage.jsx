@@ -1,4 +1,5 @@
 ﻿import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import SectionCard from '../components/SectionCard'
 
 const fields = [
@@ -17,7 +18,20 @@ const fields = [
   { label: 'Diabetes status', name: 'diabetes_status' }
 ]
 
+const normalRanges = {
+  bmi: "Normal: 18.5-24.9 kg/m2",
+  fbs: "Normal: 70-99 mg/dL (fasting)",
+  alt: "Normal: 7-56 U/L",
+  ast: "Normal: 10-40 U/L",
+  ldl: "Optimal: <100 mg/dL",
+  hdl: "Normal: >=40 mg/dL (men), >=50 mg/dL (women)",
+  triglycerides: "Normal: <150 mg/dL",
+  cholesterol: "Normal: <200 mg/dL",
+  diabetes_status: "Use: 1 = yes, 0 = no"
+}
+
 export default function PredictionInputPage() {
+  const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
     age: "",
@@ -35,8 +49,27 @@ export default function PredictionInputPage() {
     diabetes_status: ""
   })
 
+  const [touched, setTouched] = useState({})
+
+  const isFieldFilled = (value) => value !== ""
+
+  const isFormValid = fields.every((field) => isFieldFilled(formData[field.name]))
+  const ageField = fields.find((field) => field.name === "age")
+  const weightField = fields.find((field) => field.name === "weight")
+  const remainingFields = fields.filter(
+    (field) =>
+      field.name !== "age" &&
+      field.name !== "weight" &&
+      field.name !== "feet" &&
+      field.name !== "inches"
+  )
+
   const handleChange = (e) => {
     const { name, value } = e.target
+
+    if (name === "diabetes_status" && value !== "" && value !== "0" && value !== "1") {
+      return
+    }
 
     let updated = { ...formData, [name]: value }
 
@@ -51,9 +84,25 @@ export default function PredictionInputPage() {
     }
 
     setFormData(updated)
+    setTouched((prev) => ({ ...prev, [name]: true }))
+  }
+
+  const handleBlur = (e) => {
+    const { name } = e.target
+    setTouched((prev) => ({ ...prev, [name]: true }))
   }
 
   const handleSubmit = async () => {
+    if (!isFormValid) {
+      const allTouched = fields.reduce((acc, field) => {
+        acc[field.name] = true
+        return acc
+      }, {})
+
+      setTouched(allTouched)
+      return
+    }
+
     try {
       // Convert all numeric fields to numbers before sending
       const formattedData = {
@@ -84,7 +133,13 @@ export default function PredictionInputPage() {
       const data = await res.json()
 
       if (data.success) {
-        alert("Data saved successfully!")
+        navigate("/result", {
+          state: {
+            saved: true,
+            prediction: data.prediction || null,
+            submittedData: formattedData
+          }
+        })
       } else {
         alert("Error saving data")
       }
@@ -109,28 +164,180 @@ export default function PredictionInputPage() {
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {fields.map((field) => (
-              <label key={field.name} className="space-y-1 text-sm">
+            {ageField && (
+              <label key={ageField.name} className="space-y-1 text-sm">
                 <span className="font-semibold text-slate-600">
-                  {field.label}
+                  {ageField.label} <span className="text-red-600">*</span>
                 </span>
 
                 <input
-                  type={field.readOnly ? "text" : "number"}  // ✅ use number for inputs
-                  name={field.name}
-                  value={formData[field.name]}
+                  type={ageField.readOnly ? "text" : "number"}
+                  name={ageField.name}
+                  value={formData[ageField.name]}
                   onChange={handleChange}
-                  readOnly={field.readOnly}
-                  placeholder={`Enter ${field.label.toLowerCase()}`}
-                  className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-slate-700 outline-none focus:border-blue-400"
+                  onBlur={handleBlur}
+                  readOnly={ageField.readOnly}
+                  required
+                  placeholder={`Enter ${ageField.label.toLowerCase()}`}
+                  className={`w-full rounded border bg-white px-3 py-2 text-slate-700 outline-none focus:border-blue-400 ${
+                    touched[ageField.name] && !isFieldFilled(formData[ageField.name])
+                      ? "border-red-500"
+                      : "border-slate-300"
+                  }`}
                 />
+
+                {touched[ageField.name] && !isFieldFilled(formData[ageField.name]) && (
+                  <p className="text-xs text-red-600">{ageField.label} is required.</p>
+                )}
+              </label>
+            )}
+
+            {weightField && (
+              <label key={weightField.name} className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-600">
+                  {weightField.label} <span className="text-red-600">*</span>
+                </span>
+
+                <input
+                  type={weightField.readOnly ? "text" : "number"}
+                  name={weightField.name}
+                  value={formData[weightField.name]}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  readOnly={weightField.readOnly}
+                  required
+                  placeholder={`Enter ${weightField.label.toLowerCase()}`}
+                  className={`w-full rounded border bg-white px-3 py-2 text-slate-700 outline-none focus:border-blue-400 ${
+                    touched[weightField.name] && !isFieldFilled(formData[weightField.name])
+                      ? "border-red-500"
+                      : "border-slate-300"
+                  }`}
+                />
+
+                {touched[weightField.name] && !isFieldFilled(formData[weightField.name]) && (
+                  <p className="text-xs text-red-600">{weightField.label} is required.</p>
+                )}
+              </label>
+            )}
+
+            <div className="space-y-2 sm:col-span-2">
+              <span className="text-sm font-semibold text-slate-600">
+                Height <span className="text-red-600">*</span>
+              </span>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-600">Feets</span>
+                  <input
+                    type="number"
+                    name="feet"
+                    value={formData.feet}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    required
+                    placeholder="Enter feets"
+                    className={`w-full rounded border bg-white px-3 py-2 text-slate-700 outline-none focus:border-blue-400 ${
+                      touched.feet && !isFieldFilled(formData.feet)
+                        ? "border-red-500"
+                        : "border-slate-300"
+                    }`}
+                  />
+                  {touched.feet && !isFieldFilled(formData.feet) && (
+                    <p className="text-xs text-red-600">Feets is required.</p>
+                  )}
+                </label>
+
+                <label className="space-y-1 text-sm">
+                  <span className="font-semibold text-slate-600">Inches</span>
+                  <input
+                    type="number"
+                    name="inches"
+                    value={formData.inches}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    required
+                    placeholder="Enter inches"
+                    className={`w-full rounded border bg-white px-3 py-2 text-slate-700 outline-none focus:border-blue-400 ${
+                      touched.inches && !isFieldFilled(formData.inches)
+                        ? "border-red-500"
+                        : "border-slate-300"
+                    }`}
+                  />
+                  {touched.inches && !isFieldFilled(formData.inches) && (
+                    <p className="text-xs text-red-600">Inches is required.</p>
+                  )}
+                </label>
+              </div>
+            </div>
+
+            {remainingFields.map((field) => (
+              <label key={field.name} className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-600">
+                  {field.label} <span className="text-red-600">*</span>
+                </span>
+
+                {normalRanges[field.name] && (
+                  <p className="text-xs text-slate-500">{normalRanges[field.name]}</p>
+                )}
+
+                {field.name === "diabetes_status" ? (
+                  <select
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    required
+                    className={`w-full rounded border bg-white px-3 py-2 outline-none focus:border-blue-400 ${
+                      formData[field.name] === "" ? "text-slate-400" : "text-slate-700"
+                    } ${
+                      touched[field.name] && !isFieldFilled(formData[field.name])
+                        ? "border-red-500"
+                        : "border-slate-300"
+                    }`}
+                  >
+                    <option value="">Select Diabetes Status</option>
+                    <option value="0">0 = No</option>
+                    <option value="1">1 = Yes</option>
+                  </select>
+                ) : (
+                  <input
+                    type={field.readOnly ? "text" : "number"}  // ✅ use number for inputs
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    readOnly={field.readOnly}
+                    required
+                    placeholder={`Enter ${field.label.toLowerCase()}`}
+                    className={`w-full rounded border bg-white px-3 py-2 text-slate-700 outline-none focus:border-blue-400 ${
+                      touched[field.name] && !isFieldFilled(formData[field.name])
+                        ? "border-red-500"
+                        : "border-slate-300"
+                    }`}
+                  />
+                )}
+
+                {touched[field.name] && !isFieldFilled(formData[field.name]) && (
+                  <p className="text-xs text-red-600">{field.label} is required.</p>
+                )}
               </label>
             ))}
           </div>
 
+          {!isFormValid && (
+            <p className="mt-4 text-sm text-red-600">
+              Please fill all required fields before prediction.
+            </p>
+          )}
+
           <button
             onClick={handleSubmit}
-            className="mt-5 w-full rounded-md bg-blue-700 py-2 font-semibold text-white hover:bg-blue-800"
+            disabled={!isFormValid}
+            className={`mt-5 w-full rounded-md py-2 font-semibold text-white ${
+              isFormValid
+                ? "bg-blue-700 hover:bg-blue-800"
+                : "cursor-not-allowed bg-blue-300"
+            }`}
           >
             Predict
           </button>
