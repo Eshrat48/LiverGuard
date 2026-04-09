@@ -4,9 +4,20 @@ import { useLocation, useNavigate } from 'react-router-dom'
 export default function PredictionResultPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const saved = location.state?.saved
-  const prediction = location.state?.prediction
-  const submittedData = location.state?.submittedData
+
+  const storedStateRaw = sessionStorage.getItem('latestPredictionResult')
+  let storedState = null
+  try {
+    storedState = storedStateRaw ? JSON.parse(storedStateRaw) : null
+  } catch {
+    storedState = null
+  }
+
+  const resolvedState = location.state || storedState || {}
+  const saved = resolvedState.saved
+  const prediction = resolvedState.prediction
+  const modelError = resolvedState.modelError
+  const submittedData = resolvedState.submittedData
 
   const modelClass = prediction?.prediction
   const probabilityRaw = prediction?.probability
@@ -34,6 +45,12 @@ export default function PredictionResultPage() {
             </div>
           )}
 
+          {saved && !prediction && modelError && (
+            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+              {modelError}. Start the model API at http://127.0.0.1:5001 and submit again.
+            </div>
+          )}
+
           {prediction ? (
             <div className="mt-6 space-y-4 rounded-lg border border-blue-200 bg-blue-50 p-6">
               <div className="flex items-center justify-between gap-3">
@@ -54,7 +71,7 @@ export default function PredictionResultPage() {
           ) : (
             <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-slate-500">
               {saved
-                ? 'Data has been submitted successfully. Prediction result will appear here once the model API is available.'
+                ? 'Data was saved, but prediction was not returned. Ensure both server.js (port 5000) and ml_api/app.py (port 5001) are running, then submit again.'
                 : 'No prediction result yet. Submit values from the Input page to continue.'}
             </div>
           )}

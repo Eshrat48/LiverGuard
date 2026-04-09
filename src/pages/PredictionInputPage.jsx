@@ -130,15 +130,25 @@ export default function PredictionInputPage() {
         body: JSON.stringify(formattedData)
       })
 
+      if (!res.ok) {
+        alert(`Backend error: ${res.status}`)
+        return
+      }
+
       const data = await res.json()
 
       if (data.success) {
+        const resultState = {
+          saved: true,
+          prediction: data.prediction || null,
+          modelError: data.modelError || null,
+          submittedData: formattedData
+        }
+
+        sessionStorage.setItem("latestPredictionResult", JSON.stringify(resultState))
+
         navigate("/result", {
-          state: {
-            saved: true,
-            prediction: data.prediction || null,
-            submittedData: formattedData
-          }
+          state: resultState
         })
       } else {
         alert("Error saving data")

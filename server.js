@@ -56,6 +56,7 @@ app.post("/saveFeatures", (req, res) => {
       console.log("INSERT SUCCESS")
 
       let prediction = null
+      let modelError = null
 
       const modelPayload = {
         Age: Number(data.age) || 0,
@@ -86,18 +87,23 @@ app.post("/saveFeatures", (req, res) => {
           if (!modelData.error) {
             prediction = modelData
           } else {
+            modelError = `Model API error: ${modelData.error}`
             console.log("MODEL API ERROR:", modelData.error)
           }
         } else {
+          modelError = `Model API HTTP error: ${modelRes.status}`
           console.log("MODEL API HTTP ERROR:", modelRes.status)
         }
       } catch (modelErr) {
+        modelError = `Model API connection error: ${modelErr.message}`
         console.log("MODEL API CONNECTION ERROR:", modelErr.message)
       }
 
       res.json({
         success: true,
-        prediction
+        prediction,
+        modelError,
+        modelAvailable: Boolean(prediction)
       })
     }
   })
