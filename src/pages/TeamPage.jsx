@@ -1,12 +1,15 @@
 ﻿import SectionCard from '../components/SectionCard'
 
-const supervisor = ['Dr. Alice Smith', 'Project Supervisor']
+const supervisor = [
+  'Prof. Dr. Muhammad Golam Kibria',
+  'Dept. of Computer Science and Engineering, University of Liberal Arts Bangladesh'
+]
 
 const students = [
-  ['John Doe', 'Student Researcher'],
-  ['Emily Johnson', 'Student Researcher'],
-  ['Michael Brown', 'Student Researcher'],
-  ['Sophia Lee', 'Student Researcher'],
+  ['Ayush Hassan Raiyan', '223014015'],
+  ['Jarin Tasnim Eara', '223014136'],
+  ['Safaina Khan Oishi', '223014144'],
+  ['Eshrat Kamal Nova', '223014197'],
 ]
 
 export default function TeamPage() {
@@ -26,11 +29,11 @@ export default function TeamPage() {
       <div>
         <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Students</p>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {students.map(([name, role]) => (
+          {students.map(([name, id]) => (
             <article key={name} className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
               <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-gradient-to-br from-slate-200 to-blue-200" />
               <p className="text-lg font-semibold text-blue-900">{name}</p>
-              <p className="text-sm text-slate-500">{role}</p>
+              <p className="text-sm text-slate-500">ID: {id}</p>
             </article>
           ))}
         </div>
