@@ -1,20 +1,20 @@
 {
   "metrics": {
-    "accuracy": null,
-    "precision": null,
-    "recall": null,
-    "f1Score": null
+    "accuracy": 0.9093,
+    "precision": 0.8551,
+    "recall": 0.9857,
+    "f1Score": 0.9158
   },
   "confusionMatrix": {
-    "tp": null,
-    "fp": null,
-    "fn": null,
-    "tn": null
+    "tp": 2761,
+    "fp": 468,
+    "fn": 40,
+    "tn": 2333
   },
   "modelInfo": {
     "modelVersion": "v1.0.0",
-    "lastTrained": "YYYY-MM-DD",
-    "dataset": "NAFLD validation set",
+    "lastTrained": "From training export",
+    "dataset": "TEST split from classification_report.csv",
     "baseModels": [
       "Logistic Regression",
       "Random Forest",
@@ -22,5 +22,5 @@
     ],
     "metaModel": "Logistic Regression (Stacking)"
   },
-  "message": "Populate this file with real evaluation outputs from your training pipeline."
+  "message": "Metrics loaded from ml_api/classification_report.csv (TEST rows)."
 }

@@ -5,6 +5,8 @@ export default function PerformancePage() {
   const [apiStatus, setApiStatus] = useState('Checking model API...')
   const [modelMessage, setModelMessage] = useState('Loading performance details...')
   const [topFeatures, setTopFeatures] = useState([])
+  const [ensembleFields, setEnsembleFields] = useState([])
+  const [inputFields, setInputFields] = useState([])
   const [modelInfo, setModelInfo] = useState(null)
   const [artifactLoaded, setArtifactLoaded] = useState(false)
   const [metrics, setMetrics] = useState([
@@ -62,6 +64,8 @@ export default function PerformancePage() {
         })
 
         setTopFeatures(data.modelInfo?.topFeatures || [])
+        setEnsembleFields(data.modelInfo?.ensembleFields || [])
+        setInputFields(data.modelInfo?.inputFields || [])
         setModelInfo(data.modelInfo || null)
       })
       .catch(() => {
@@ -105,7 +109,7 @@ export default function PerformancePage() {
             <p className="mt-3 text-xs text-slate-500">{modelMessage}</p>
             {!artifactLoaded && (
               <p className="mt-2 text-xs font-semibold text-amber-700">
-                Real validation metrics are not loaded. Add performance_metrics.json to ml_api/Models.
+                Real validation metrics are not loaded. Add/update performance_metrics.example.json in ml_api/Models.
               </p>
             )}
           </div>
@@ -126,6 +130,45 @@ export default function PerformancePage() {
             )}
           </div>
 
+          <div className="mt-6 rounded border border-slate-200 bg-white p-4">
+            <p className="text-sm font-semibold text-slate-700">Ensemble Meta-Model Signals</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Weights learned by the stacking model from base-model probabilities.
+            </p>
+            {ensembleFields.length ? (
+              <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                {ensembleFields.map((item) => (
+                  <li key={item.signal} className="rounded bg-emerald-50 px-3 py-2">
+                    <span className="font-semibold text-emerald-900">{item.signal}</span>
+                    <span className="ml-2 text-slate-600">
+                      Weight: {typeof item.weight === 'number' ? item.weight.toFixed(4) : 'Unavailable'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-slate-500">No ensemble signal weights available.</p>
+            )}
+          </div>
+
+          <div className="mt-6 rounded border border-slate-200 bg-white p-4">
+            <p className="text-sm font-semibold text-slate-700">Input Fields Used By Model</p>
+            {inputFields.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {inputFields.map((field) => (
+                  <span
+                    key={field}
+                    className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-900"
+                  >
+                    {field}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-slate-500">No input field metadata available.</p>
+            )}
+          </div>
+
           {modelInfo && (
             <div className="mt-6 rounded border border-slate-200 bg-white p-4 text-sm text-slate-600">
               <p className="font-semibold text-slate-700">Model Details</p>
@@ -133,6 +176,12 @@ export default function PerformancePage() {
               <p>Last Trained: {modelInfo.lastTrained || 'Not provided'}</p>
               <p>Dataset: {modelInfo.dataset || 'Not provided'}</p>
               <p>Feature Count: {modelInfo.featureCount ?? 'Not available'}</p>
+              <p>
+                Ensemble Intercept:{' '}
+                {typeof modelInfo.ensembleIntercept === 'number'
+                  ? modelInfo.ensembleIntercept.toFixed(4)
+                  : 'Not available'}
+              </p>
             </div>
           )}
         </div>

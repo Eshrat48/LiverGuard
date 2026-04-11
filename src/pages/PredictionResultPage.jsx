@@ -76,12 +76,20 @@ export default function PredictionResultPage() {
             </div>
           )}
 
-          <button
-            onClick={() => navigate('/input')}
-            className="mt-6 rounded-md bg-blue-700 px-6 py-2 font-semibold text-white"
-          >
-            Back to Input
-          </button>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate('/input')}
+              className="rounded-md bg-blue-700 px-6 py-2 font-semibold text-white"
+            >
+              Back to Input
+            </button>
+            <button
+              onClick={() => navigate('/performance')}
+              className="rounded-md border border-blue-700 bg-white px-6 py-2 font-semibold text-blue-700"
+            >
+              View Model Performance
+            </button>
+          </div>
         </div>
 
         <aside className="rounded-xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white p-5">

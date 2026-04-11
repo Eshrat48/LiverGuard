@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import numpy as np
 import joblib
 from xgboost import XGBClassifier
@@ -6,6 +7,7 @@ from pathlib import Path
 import json
 
 app = Flask(__name__)
+CORS(app)
 
 BASE_DIR = Path(__file__).resolve().parent
 MODELS_DIR = BASE_DIR / "Models"
@@ -42,6 +44,22 @@ def _combined_importance():
         + _normalize(xgb_importance)
     ) / 3.0
 
+def _ensemble_meta_weights():
+    # Stacking model is trained on [lr_prob, rf_prob, xgb_prob]
+    stack_names = ["Logistic Regression Signal", "Random Forest Signal", "XGBoost Signal"]
+
+    coef = getattr(ensemble_model, "coef_", None)
+    if coef is None or len(coef) == 0:
+        return [{"signal": name, "weight": None} for name in stack_names]
+
+    weights = coef[0]
+    output = []
+    for idx, name in enumerate(stack_names):
+        weight = float(weights[idx]) if idx < len(weights) else None
+        output.append({"signal": name, "weight": weight})
+
+    return output
+
 def _model_factor_analysis(x_scaled_row):
     combined_importance = _combined_importance()
 
@@ -65,7 +83,7 @@ def _model_recommendation(risk_label, probability):
     return "Low predicted risk. Maintain healthy lifestyle and continue periodic monitoring."
 
 def _load_performance_artifact():
-    artifact_path = MODELS_DIR / "performance_metrics.json"
+    artifact_path = MODELS_DIR / "performance_metrics.example.json"
     if not artifact_path.exists():
         return None
 
@@ -81,6 +99,9 @@ def performance():
     try:
         combined_importance = _combined_importance()
         top_indices = np.argsort(combined_importance)[::-1][:5]
+        ensemble_fields = _ensemble_meta_weights()
+        model_intercept = getattr(ensemble_model, "intercept_", None)
+        intercept_value = float(model_intercept[0]) if model_intercept is not None and len(model_intercept) else None
 
         top_features = [
             {
@@ -97,31 +118,60 @@ def performance():
             confusion = artifact.get("confusionMatrix", {})
             model_info = artifact.get("modelInfo", {})
 
+            metric_values = [
+                metrics.get("accuracy"),
+                metrics.get("precision"),
+                metrics.get("recall"),
+                metrics.get("f1Score")
+            ]
+            confusion_values = [
+                confusion.get("tp"),
+                confusion.get("fp"),
+                confusion.get("fn"),
+                confusion.get("tn")
+            ]
+
+            has_non_placeholder_metrics = any(
+                (value is not None) and (float(value) != 0.0) for value in metric_values
+            )
+            has_non_placeholder_confusion = any(
+                (value is not None) and (float(value) != 0.0) for value in confusion_values
+            )
+
+            metrics_available = has_non_placeholder_metrics or has_non_placeholder_confusion
+
             return jsonify({
-                "metricsAvailable": True,
+                "metricsAvailable": metrics_available,
                 "metrics": {
-                    "accuracy": metrics.get("accuracy"),
-                    "precision": metrics.get("precision"),
-                    "recall": metrics.get("recall"),
-                    "f1Score": metrics.get("f1Score")
+                    "accuracy": metrics.get("accuracy") if metrics_available else None,
+                    "precision": metrics.get("precision") if metrics_available else None,
+                    "recall": metrics.get("recall") if metrics_available else None,
+                    "f1Score": metrics.get("f1Score") if metrics_available else None
                 },
                 "confusionMatrix": {
-                    "tp": confusion.get("tp"),
-                    "fp": confusion.get("fp"),
-                    "fn": confusion.get("fn"),
-                    "tn": confusion.get("tn")
+                    "tp": confusion.get("tp") if metrics_available else None,
+                    "fp": confusion.get("fp") if metrics_available else None,
+                    "fn": confusion.get("fn") if metrics_available else None,
+                    "tn": confusion.get("tn") if metrics_available else None
                 },
                 "modelInfo": {
                     "featureCount": int(len(feature_columns)),
+                    "inputFields": list(feature_columns),
                     "baseModels": model_info.get("baseModels", ["Logistic Regression", "Random Forest", "XGBoost"]),
                     "metaModel": model_info.get("metaModel", "Logistic Regression (Stacking)"),
+                    "ensembleFields": ensemble_fields,
+                    "ensembleIntercept": intercept_value,
                     "modelVersion": model_info.get("modelVersion"),
                     "lastTrained": model_info.get("lastTrained"),
                     "dataset": model_info.get("dataset"),
                     "topFeatures": top_features
                 },
-                "message": artifact.get("message", "Performance metrics loaded from artifact file."),
-                "artifactLoaded": True
+                "message": (
+                    artifact.get("message", "Performance metrics loaded from artifact file.")
+                    if metrics_available
+                    else "Performance artifact found, but values look like placeholders. Generate real metrics from evaluation data."
+                ),
+                "artifactLoaded": metrics_available
             })
 
         # Validation-set metrics are not available in this deployed package.
@@ -142,8 +192,11 @@ def performance():
             },
             "modelInfo": {
                 "featureCount": int(len(feature_columns)),
+                "inputFields": list(feature_columns),
                 "baseModels": ["Logistic Regression", "Random Forest", "XGBoost"],
                 "metaModel": "Logistic Regression (Stacking)",
+                "ensembleFields": ensemble_fields,
+                "ensembleIntercept": intercept_value,
                 "topFeatures": top_features
             },
             "message": "Validation metrics are not packaged with deployed model artifacts.",
