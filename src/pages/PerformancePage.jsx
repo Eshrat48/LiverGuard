@@ -1,6 +1,15 @@
 ﻿import SectionCard from '../components/SectionCard'
 import { useEffect, useState } from 'react'
 
+const defaultMetrics = [
+  { label: 'Accuracy', value: 'Unavailable' },
+  { label: 'Precision', value: 'Unavailable' },
+  { label: 'Recall', value: 'Unavailable' },
+  { label: 'F1-Score', value: 'Unavailable' }
+]
+
+const defaultConfusion = { tp: '-', fp: '-', fn: '-', tn: '-' }
+
 export default function PerformancePage() {
   const [apiStatus, setApiStatus] = useState('Checking model API...')
   const [modelMessage, setModelMessage] = useState('Loading performance details...')
@@ -9,20 +18,28 @@ export default function PerformancePage() {
   const [inputFields, setInputFields] = useState([])
   const [modelInfo, setModelInfo] = useState(null)
   const [artifactLoaded, setArtifactLoaded] = useState(false)
-  const [metrics, setMetrics] = useState([
-    { label: 'Accuracy', value: 'Unavailable' },
-    { label: 'Precision', value: 'Unavailable' },
-    { label: 'Recall', value: 'Unavailable' },
-    { label: 'F1-Score', value: 'Unavailable' }
-  ])
-  const [confusion, setConfusion] = useState({ tp: '-', fp: '-', fn: '-', tn: '-' })
+  const [metrics, setMetrics] = useState(defaultMetrics)
+  const [confusion, setConfusion] = useState(defaultConfusion)
 
-  useEffect(() => {
-    let mounted = true
+  const clearPerformanceView = () => {
+    setApiStatus('Performance view cleared. Load data when needed.')
+    setModelMessage('No performance data loaded.')
+    setTopFeatures([])
+    setEnsembleFields([])
+    setInputFields([])
+    setModelInfo(null)
+    setArtifactLoaded(false)
+    setMetrics(defaultMetrics)
+    setConfusion(defaultConfusion)
+  }
+
+  const loadPerformance = (mountedRef) => {
+    setApiStatus('Checking model API...')
+    setModelMessage('Loading performance details...')
 
     fetch('http://127.0.0.1:5001/performance')
       .then(async (res) => {
-        if (!mounted) return
+        if (!mountedRef.current) return
 
         if (!res.ok) {
           setApiStatus('Model API responded with an error status.')
@@ -69,13 +86,18 @@ export default function PerformancePage() {
         setModelInfo(data.modelInfo || null)
       })
       .catch(() => {
-        if (!mounted) return
+        if (!mountedRef.current) return
         setApiStatus('Model API is not reachable. Start ml_api/app.py to enable prediction service.')
         setModelMessage('Performance data unavailable while API is offline.')
       })
+  }
+
+  useEffect(() => {
+    const mountedRef = { current: true }
+    loadPerformance(mountedRef)
 
     return () => {
-      mounted = false
+      mountedRef.current = false
     }
   }, [])
 
@@ -191,6 +213,20 @@ export default function PerformancePage() {
           <p className="mt-2 text-sm text-slate-600">This panel can show model version, last trained date, and API response health.</p>
           <div className="mt-4 rounded-lg border border-dashed border-blue-200 bg-white p-4 text-sm text-slate-500">
             {apiStatus}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => loadPerformance({ current: true })}
+              className="rounded-md border border-blue-700 bg-white px-4 py-2 text-sm font-semibold text-blue-700"
+            >
+              Reload Performance
+            </button>
+            <button
+              onClick={clearPerformanceView}
+              className="rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700"
+            >
+              Clear Performance View
+            </button>
           </div>
         </aside>
       </div>
