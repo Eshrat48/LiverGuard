@@ -18,18 +18,6 @@ const fields = [
   { label: 'Diabetes status', name: 'diabetes_status' }
 ]
 
-const normalRanges = {
-  bmi: "Normal: 18.5-24.9 kg/m2",
-  fbs: "Normal: 70-99 mg/dL (fasting)",
-  alt: "Normal: 7-56 U/L",
-  ast: "Normal: 10-40 U/L",
-  ldl: "Optimal: <100 mg/dL",
-  hdl: "Normal: >=40 mg/dL (men), >=50 mg/dL (women)",
-  triglycerides: "Normal: <150 mg/dL",
-  cholesterol: "Normal: <200 mg/dL",
-  diabetes_status: "Use: 1 = yes, 0 = no"
-}
-
 export default function PredictionInputPage() {
   const navigate = useNavigate()
 
@@ -285,10 +273,6 @@ export default function PredictionInputPage() {
                 <span className="font-semibold text-slate-600">
                   {field.label} <span className="text-red-600">*</span>
                 </span>
-
-                {normalRanges[field.name] && (
-                  <p className="text-xs text-slate-500">{normalRanges[field.name]}</p>
-                )}
 
                 {field.name === "diabetes_status" ? (
                   <select
